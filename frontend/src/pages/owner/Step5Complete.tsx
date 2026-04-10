@@ -1,8 +1,14 @@
+import { useEffect } from "react";
 import MaterialIcon from "../../components/ui/MaterialIcon";
+import { markOnboardingComplete } from "../../lib/registrationDraft";
 
 type PageProps = { onNavigate: (page: string) => void };
 
 export default function Step5Complete({ onNavigate }: PageProps) {
+  useEffect(() => {
+    markOnboardingComplete("owner");
+  }, []);
+
   return (
     <main className="grid min-h-screen place-items-center bg-surface px-6 py-12">
       <section className="card max-w-2xl text-center">

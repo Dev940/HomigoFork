@@ -35,6 +35,9 @@ export default function RoleSelection({ onNavigate }: PageProps) {
           ))}
         </div>
         <button onClick={() => onNavigate("login")} className="mt-10 text-sm font-bold text-primary">Already have an account? Sign in here</button>
+        <button onClick={() => onNavigate("dashboard")} className="mt-3 flex items-center gap-1 text-sm text-on-surface-variant underline-offset-2 hover:text-primary hover:underline">
+          Explore the app first &rarr;
+        </button>
       </main>
       <Footer />
     </>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import LandingPage from "./pages/LandingPage";
 import LoginSignup from "./pages/LoginSignup";
 import RoleSelection from "./pages/RoleSelection";
@@ -55,11 +55,22 @@ export default function App({ clerkEnabled = false }: AppProps) {
   const [authUserId, setAuthUserId] = useState<string | number>(Number(import.meta.env.VITE_DEMO_USER_ID ?? 1));
   const [authUserProfile, setAuthUserProfile] = useState<{ fullName?: string | null; email?: string; phone?: string; imageUrl?: string } | undefined>();
 
-  const navigate = (nextPage: string) => {
+  const navigate = useCallback((nextPage: string) => {
     setPage(nextPage);
     window.location.hash = `/${nextPage}`;
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
+
+  const handleUserIdChange = useCallback((userId: string | number | null) => {
+    setAuthUserId(userId ?? Number(import.meta.env.VITE_DEMO_USER_ID ?? 1));
+  }, []);
+
+  const handleUserProfileChange = useCallback(
+    (profile: { fullName?: string | null; email?: string; phone?: string; imageUrl?: string } | null) => {
+      setAuthUserProfile(profile ?? undefined);
+    },
+    [],
+  );
 
   useEffect(() => {
     const onHashChange = () => {
@@ -83,7 +94,7 @@ export default function App({ clerkEnabled = false }: AppProps) {
     case "accommodation":
       return <AccommodationSearch onNavigate={navigate} />;
     case "messages":
-      return <Messages />;
+      return <Messages onNavigate={navigate} />;
     case "profile":
       return <UserProfile onNavigate={navigate} />;
     case "onboarding1":
@@ -113,7 +124,7 @@ export default function App({ clerkEnabled = false }: AppProps) {
 
   return (
     <AuthProvider value={{ userId: authUserId, isClerkEnabled: clerkEnabled, userProfile: authUserProfile }}>
-      {clerkEnabled && <AuthBridge onNavigate={navigate} onUserIdChange={(userId) => setAuthUserId(userId ?? Number(import.meta.env.VITE_DEMO_USER_ID ?? 1))} onUserProfileChange={(profile) => setAuthUserProfile(profile ?? undefined)} />}
+      {clerkEnabled && <AuthBridge onNavigate={navigate} onUserIdChange={handleUserIdChange} onUserProfileChange={handleUserProfileChange} />}
       {publicPages.has(page) ? pageElement : <ProtectedRoute clerkEnabled={clerkEnabled} onNavigate={navigate}>{pageElement}</ProtectedRoute>}
     </AuthProvider>
   );

@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import MaterialIcon from "../../components/ui/MaterialIcon";
-import { readRegistrationDraft } from "../../lib/registrationDraft";
+import { markOnboardingComplete, readRegistrationDraft } from "../../lib/registrationDraft";
 
 type PageProps = { onNavigate: (page: string) => void };
 
@@ -7,6 +8,10 @@ const heroImage = "https://lh3.googleusercontent.com/aida-public/AB6AXuDbtWDZRKT
 
 export default function Step4Complete({ onNavigate }: PageProps) {
   const draft = readRegistrationDraft();
+
+  useEffect(() => {
+    markOnboardingComplete("seeker");
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col items-center overflow-x-hidden bg-surface text-on-surface">

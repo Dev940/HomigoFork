@@ -30,7 +30,7 @@ export default function LoginSignup({ onNavigate }: PageProps) {
           </div>
           {clerkEnabled ? (
             <div className="mt-8">
-              {mode === "sign-in" ? <SignIn routing="hash" signUpUrl="#/login" afterSignInUrl="#/dashboard" /> : <SignUp routing="hash" signInUrl="#/login" afterSignUpUrl="#/role" />}
+              {mode === "sign-in" ? <SignIn routing="virtual" /> : <SignUp routing="virtual" />}
             </div>
           ) : (
             <form className="mt-8 space-y-5">

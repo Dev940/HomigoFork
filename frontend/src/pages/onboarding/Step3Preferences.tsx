@@ -21,9 +21,13 @@ export default function Step3Preferences({ onNavigate }: PageProps) {
   const [cleanliness, setCleanliness] = useState(draft.seeker_profile.lifestyle_preferences.cleanliness);
   const [preferredGender, setPreferredGender] = useState(draft.seeker_profile.roommate_preferences.preferred_gender);
   const [petFriendly, setPetFriendly] = useState(draft.seeker_profile.roommate_preferences.pet_friendly);
-  const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: "error" | "success"; message: string } | null>(null);
 
   const submitProfile = async () => {
+    if (loading) return;
+    setLoading(true);
+    setStatus(null);
     const saved = saveRegistrationDraft({
       basic_info: {
         ...draft.basic_info,
@@ -53,24 +57,30 @@ export default function Step3Preferences({ onNavigate }: PageProps) {
       },
     });
 
-    setStatus("Saving your registration...");
     try {
       await api.saveUserProfile({
         user_id: userId,
         basic_info: saved.basic_info,
         seeker_profile: saved.seeker_profile,
       });
-      setStatus("Registration saved successfully.");
+      setStatus({ type: "success", message: "Profile saved! Heading to the next step…" });
       onNavigate("onboarding4");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not save registration.");
+      console.error("[Step3] saveUserProfile failed:", error);
+      setStatus({ type: "error", message: error instanceof Error ? error.message : "Could not save registration. Please try again." });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <RegistrationShell currentStep={3} sideTimeline title="Curate Your Experience" onBack={() => onNavigate("onboarding2")} onContinue={submitProfile} continueLabel="Save & Continue">
+    <RegistrationShell currentStep={3} sideTimeline title="Curate Your Experience" onBack={() => onNavigate("onboarding2")} onContinue={submitProfile} continueLabel="Save & Continue" loading={loading}>
       <form className="mx-auto max-w-4xl space-y-12" onSubmit={(event) => event.preventDefault()}>
-        {status && <p className="rounded-lg bg-secondary-fixed p-4 text-sm font-semibold text-on-secondary-fixed">{status}</p>}
+        {status && (
+          <p className={`rounded-lg p-4 text-sm font-semibold ${status.type === "error" ? "bg-error/10 text-error" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
+            {status.message}
+          </p>
+        )}
         <section className="rounded-lg bg-surface-container-lowest p-8 shadow-[0px_12px_32px_rgba(24,28,28,0.06)]">
           <div className="mb-8 flex items-center gap-3"><span className="rounded-xl bg-primary-container p-3 text-on-primary-container"><MaterialIcon name="person" /></span><h2 className="font-headline text-2xl font-bold">Basic Profile</h2></div>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
