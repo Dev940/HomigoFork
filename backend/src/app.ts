@@ -5,6 +5,7 @@ import { env } from "./config/env.js";
 import { requireAuth } from "./middleware/auth.js";
 import { createDomainRouter } from "./routes/domainRoutes.js";
 import { createCrudRouter } from "./routes/tableRoutes.js";
+import { registerSwagger } from "./docs/swagger.js";
 
 export function createApp() {
   const app = express();
@@ -16,6 +17,7 @@ export function createApp() {
   app.get("/health", (_req, res) => {
     res.json({ ok: true, service: "homigo-backend" });
   });
+  registerSwagger(app);
 
   app.use(requireAuth);
   app.use("/api", createDomainRouter());
