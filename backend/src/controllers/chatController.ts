@@ -37,37 +37,102 @@ async function findConversationBetween(userA: number, userB: number) {
   return data;
 }
 
+async function ensureConversationBetween(user1Id: number, user2Id: number) {
+  const existing = await findConversationBetween(user1Id, user2Id);
+  if (existing) return { conversation: existing, existing: true as const };
+
+  const insertAttempt = await supabase
+    .from("conversations")
+    .insert({
+      user1_id: user1Id,
+      user2_id: user2Id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (!insertAttempt.error && insertAttempt.data) {
+    return { conversation: insertAttempt.data, existing: false as const };
+  }
+
+  if (insertAttempt.error && (insertAttempt.error.code === "23505" || String(insertAttempt.error.message).toLowerCase().includes("duplicate"))) {
+    const concurrent = await findConversationBetween(user1Id, user2Id);
+    if (concurrent) return { conversation: concurrent, existing: true as const };
+  }
+
+  throw insertAttempt.error ?? new Error("Unable to create conversation");
+}
+
 export async function createOrGetConversation(req: Request, res: Response) {
   try {
     const user1Id = await resolveUserId(req.body?.user1_id ?? req.body?.sender_id);
     const user2Id = await resolveUserId(req.body?.user2_id ?? req.body?.receiver_id);
     if (user1Id === user2Id) throw new HttpError(400, "Conversation users must be different");
 
-    const existing = await findConversationBetween(user1Id, user2Id);
-    if (existing) return res.json({ success: true, data: existing, existing: true });
+    const { conversation, existing } = await ensureConversationBetween(user1Id, user2Id);
+    return res.status(existing ? 200 : 201).json({ success: true, data: conversation, existing });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
 
-    const insertAttempt = await supabase
-      .from("conversations")
-      .insert({
-        user1_id: user1Id,
-        user2_id: user2Id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select("*")
-      .single();
+async function resolveOwnerUserIdByPropertyId(propertyId: number): Promise<number> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select("property_id, owner_profiles ( user_id )")
+    .eq("property_id", propertyId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new HttpError(404, "Property not found");
+  const ownerUserId = (data as any).owner_profiles?.user_id as number | undefined;
+  if (!ownerUserId) throw new HttpError(400, "Property owner not linked to a user");
+  return ownerUserId;
+}
 
-    if (!insertAttempt.error && insertAttempt.data) {
-      return res.status(201).json({ success: true, data: insertAttempt.data, existing: false });
-    }
+/**
+ * Start chat from Property Details page.
+ * POST /api/properties/:propertyId/conversations
+ * Body: { user_id } (viewer / current user)
+ */
+export async function createOrGetConversationForProperty(req: Request, res: Response) {
+  try {
+    const propertyId = Number(req.params.propertyId);
+    if (!Number.isFinite(propertyId)) throw new HttpError(400, "Invalid property_id");
 
-    // Handle race: if a concurrent request inserted the conversation, return the existing one.
-    if (insertAttempt.error && (insertAttempt.error.code === "23505" || String(insertAttempt.error.message).toLowerCase().includes("duplicate"))) {
-      const concurrent = await findConversationBetween(user1Id, user2Id);
-      if (concurrent) return res.json({ success: true, data: concurrent, existing: true });
-    }
+    const viewerUserId = await resolveUserId(req.body?.user_id ?? req.body?.viewer_id ?? req.body?.sender_id);
+    const ownerUserId = await resolveOwnerUserIdByPropertyId(propertyId);
+    if (viewerUserId === ownerUserId) throw new HttpError(400, "You cannot chat with yourself");
 
-    throw insertAttempt.error ?? new Error("Unable to create conversation");
+    const { conversation, existing } = await ensureConversationBetween(viewerUserId, ownerUserId);
+    res.status(existing ? 200 : 201).json({
+      success: true,
+      data: {
+        conversation,
+        property_id: propertyId,
+        user_id: viewerUserId,
+        owner_user_id: ownerUserId,
+      },
+      existing,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+/**
+ * Start chat from User Details page.
+ * POST /api/users/:userId/conversations
+ * Body: { user_id } (viewer / current user)
+ */
+export async function createOrGetConversationForUser(req: Request, res: Response) {
+  try {
+    const targetUserId = await resolveUserId(req.params.userId);
+    const viewerUserId = await resolveUserId(req.body?.user_id ?? req.body?.viewer_id);
+    if (viewerUserId === targetUserId) throw new HttpError(400, "You cannot chat with yourself");
+
+    const { conversation, existing } = await ensureConversationBetween(viewerUserId, targetUserId);
+    res.status(existing ? 200 : 201).json({ success: true, data: conversation, existing });
   } catch (error) {
     sendError(res, error);
   }

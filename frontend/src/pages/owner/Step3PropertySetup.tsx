@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import MaterialIcon from "../../components/ui/MaterialIcon";
 import ProgressStepper from "../../components/ui/ProgressStepper";
 import { readOwnerDraft, saveOwnerDraft } from "../../lib/registrationDraft";
 
@@ -18,7 +19,29 @@ export default function Step3PropertySetup({ onNavigate }: PageProps) {
   const [monthlyRent, setMonthlyRent] = useState(p.monthly_rent);
   const [availableFrom, setAvailableFrom] = useState(p.available_from);
   const [amenities, setAmenities] = useState<string[]>(p.amenities);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<{ title?: string; city?: string; monthlyRent?: string }>({});
+
+  const addFiles = (files: FileList | null) => {
+    if (!files) return;
+    const images = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    setPhotos((prev) => {
+      const existing = new Set(prev.map((f) => f.name + f.size));
+      return [...prev, ...images.filter((f) => !existing.has(f.name + f.size))];
+    });
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    addFiles(e.dataTransfer.files);
+  };
 
   const toggleAmenity = (item: string) =>
     setAmenities((prev) => (prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]));
@@ -145,9 +168,73 @@ export default function Step3PropertySetup({ onNavigate }: PageProps) {
 
         <section className="card">
           <h2 className="mb-5 font-headline text-2xl font-bold">Photos</h2>
-          <div className="rounded-lg bg-surface-container-low p-10 text-center text-on-surface-variant">
-            Drop listing photos here
+
+          {/* Drop zone */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={onDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-10 text-center transition ${
+              isDragging
+                ? "border-primary bg-primary/5 text-primary"
+                : "border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-primary hover:text-primary"
+            }`}
+          >
+            <MaterialIcon name="add_photo_alternate" className="text-5xl" />
+            <p className="text-sm font-semibold">Drag photos here or <span className="text-primary underline">browse files</span></p>
+            <p className="text-xs">PNG, JPG, WEBP — multiple allowed</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => addFiles(e.target.files)}
+            />
           </div>
+
+          {/* Previews */}
+          {photos.length > 0 && (
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {photos.map((file, i) => (
+                <div key={file.name + file.size} className="group relative aspect-square overflow-hidden rounded-lg bg-surface-container">
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={file.name}
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition group-hover:opacity-100"
+                    aria-label="Remove photo"
+                  >
+                    <MaterialIcon name="close" className="text-sm" />
+                  </button>
+                  {i === 0 && (
+                    <span className="absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-xs font-bold text-white">Cover</span>
+                  )}
+                </div>
+              ))}
+
+              {/* Add more tile */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-primary hover:text-primary"
+              >
+                <MaterialIcon name="add" className="text-3xl" />
+                <span className="text-xs font-semibold">Add more</span>
+              </button>
+            </div>
+          )}
+
+          {photos.length > 0 && (
+            <p className="mt-3 text-xs text-on-surface-variant">
+              {photos.length} photo{photos.length !== 1 ? "s" : ""} selected · First photo is used as cover
+            </p>
+          )}
         </section>
 
         <div className="flex justify-between">

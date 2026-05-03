@@ -9,9 +9,12 @@ type AuthBridgeProps = {
   onUserProfileChange: (
     profile: { fullName?: string | null; email?: string; phone?: string; imageUrl?: string } | null,
   ) => void;
+  currentPage: string;
 };
 
-export default function AuthBridge({ onNavigate, onUserIdChange, onUserProfileChange }: AuthBridgeProps) {
+const PUBLIC_PAGES = new Set(["landing", "login"]);
+
+export default function AuthBridge({ onNavigate, onUserIdChange, onUserProfileChange, currentPage }: AuthBridgeProps) {
   const { getToken, isSignedIn } = useAuth();
   const { user, isLoaded } = useUser();
   // Prevents duplicate sign-in processing across re-renders
@@ -42,7 +45,7 @@ export default function AuthBridge({ onNavigate, onUserIdChange, onUserProfileCh
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, isSignedIn, user]);
 
-  // On sign-in: upsert user record, then route to the right page
+  // On sign-in: sync user record to Supabase, then route to the right page
   useEffect(() => {
     // Reset gate on sign-out so the next sign-in is handled correctly
     if (isLoaded && !isSignedIn) {
@@ -54,28 +57,28 @@ export default function AuthBridge({ onNavigate, onUserIdChange, onUserProfileCh
     didHandleSignIn.current = true;
 
     (async () => {
-      // Upsert the basic user record. We intentionally omit `role` here so
-      // we never overwrite a role that was set during onboarding.
+      // Upsert the Clerk user into Supabase (saves clerk_id, email, name, photo).
+      // Use the returned Supabase user_id as the app-wide userId so all
+      // subsequent API calls use the stable numeric PK, not the Clerk ID string.
+      let resolvedUserId: string | number = user.id;
       try {
-        await api.saveUserProfile({
-          user_id: user.id,
-          basic_info: {
-            full_name: user.fullName ?? user.primaryEmailAddress?.emailAddress ?? "Homigo User",
-            email: user.primaryEmailAddress?.emailAddress,
-            phone: user.primaryPhoneNumber?.phoneNumber,
-            profile_photo: user.imageUrl,
-          },
-        });
+        const syncResult = await api.syncUser();
+        if (syncResult?.data?.user_id) {
+          resolvedUserId = syncResult.data.user_id;
+          onUserIdChange(resolvedUserId);
+        }
       } catch {
-        // Non-fatal — continue to redirect even if upsert fails
+        // Non-fatal — continue even if sync fails (e.g. backend has no CLERK_SECRET_KEY)
       }
+
+      // Don't redirect away from public pages (e.g. landing) on auto sign-in
+      if (PUBLIC_PAGES.has(currentPage)) return;
 
       // Determine destination: returning users (role set) → dashboard; new users → role selection
       try {
-        const result = await api.getUserDetails(user.id) as any;
+        const result = await api.getUserDetails(resolvedUserId) as any;
         const role = result?.data?.basic_info?.role;
         if (role === "seeker" || role === "owner") {
-          // Persist completion flag so ProfileGate works without another API call
           markOnboardingComplete(role);
           onNavigate("dashboard");
         } else {

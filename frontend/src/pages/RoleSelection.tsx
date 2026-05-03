@@ -1,10 +1,13 @@
 import Footer from "../components/layout/Footer";
+import { useHomigoAuth } from "../components/auth/AuthContext";
 import MaterialIcon from "../components/ui/MaterialIcon";
 import ProgressStepper from "../components/ui/ProgressStepper";
 
 type PageProps = { onNavigate: (page: string) => void };
 
 export default function RoleSelection({ onNavigate }: PageProps) {
+  const { isClerkEnabled, userProfile } = useHomigoAuth();
+  const isSignedIn = isClerkEnabled && Boolean(userProfile?.fullName ?? userProfile?.email);
   return (
     <>
       <div className="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-xl">
@@ -34,8 +37,10 @@ export default function RoleSelection({ onNavigate }: PageProps) {
             </button>
           ))}
         </div>
-        <button onClick={() => onNavigate("login")} className="mt-10 text-sm font-bold text-primary">Already have an account? Sign in here</button>
-        <button onClick={() => onNavigate("dashboard")} className="mt-3 flex items-center gap-1 text-sm text-on-surface-variant underline-offset-2 hover:text-primary hover:underline">
+        {!isSignedIn && (
+          <button onClick={() => onNavigate("login")} className="mt-10 text-sm font-bold text-primary">Already have an account? Sign in here</button>
+        )}
+        <button onClick={() => onNavigate("dashboard")} className={`flex items-center gap-1 text-sm text-on-surface-variant underline-offset-2 hover:text-primary hover:underline ${isSignedIn ? "mt-10" : "mt-3"}`}>
           Explore the app first &rarr;
         </button>
       </main>

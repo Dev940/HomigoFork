@@ -34,18 +34,27 @@ const toAmenityLabel = (key: string): string =>
 async function ensureUser(userId: unknown, basicInfo: any) {
   if (!basicInfo?.email) throw new HttpError(400, "basic_info.email is required");
   const role = basicInfo.role ?? "seeker";
-  const existing = await supabase.from("users").select("*").eq("email", basicInfo.email).maybeSingle();
+  const clerkId: string | null = basicInfo.clerk_id ?? null;
+
+  // Prefer lookup by clerk_id when provided so we don't create duplicates
+  // if the user's email ever changes in Clerk.
+  const existing = clerkId
+    ? await supabase.from("users").select("*").eq("clerk_id", clerkId).maybeSingle()
+    : await supabase.from("users").select("*").eq("email", basicInfo.email).maybeSingle();
   if (existing.error) throw existing.error;
 
   if (existing.data) {
+    const updatePayload: Record<string, unknown> = {
+      full_name: basicInfo.full_name ?? existing.data.full_name,
+      phone: basicInfo.phone ?? existing.data.phone,
+      role,
+      updated_at: new Date().toISOString(),
+    };
+    if (clerkId) updatePayload.clerk_id = clerkId;
+
     const updated = await supabase
       .from("users")
-      .update({
-        full_name: basicInfo.full_name ?? existing.data.full_name,
-        phone: basicInfo.phone ?? existing.data.phone,
-        role,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("user_id", existing.data.user_id)
       .select("*")
       .single();
@@ -60,6 +69,7 @@ async function ensureUser(userId: unknown, basicInfo: any) {
     role,
     updated_at: new Date().toISOString(),
   };
+  if (clerkId) createPayload.clerk_id = clerkId;
 
   // Only set explicit numeric user_id on first insert, never on update.
   const numericUserId = toNumber(userId);

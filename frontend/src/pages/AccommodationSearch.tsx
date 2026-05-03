@@ -2,8 +2,7 @@ import { useState } from "react";
 import TopNavBar from "../components/layout/TopNavBar";
 import BottomNavBar from "../components/layout/BottomNavBar";
 import MaterialIcon from "../components/ui/MaterialIcon";
-import ProfileGate from "../components/ui/ProfileGate";
-import { PROPERTIES, OWNERS, type PropertyListing, type Owner } from "../lib/mockData";
+import { PROPERTIES, OWNERS, type PropertyListing } from "../lib/mockData";
 
 type PageProps = { onNavigate: (page: string) => void };
 
@@ -27,183 +26,6 @@ const DEFAULT_FILTERS: Filters = {
 const CITIES = ["all", "Bangalore", "Mumbai", "Hyderabad", "Delhi", "Gurgaon", "Pune", "Chennai", "Kolkata", "Noida"];
 const PROP_TYPES = ["all", "apartment", "villa", "studio", "house", "pg"];
 const ROOM_TYPES = ["all", "private", "shared", "full"];
-
-// ─── Owner card (inside detail) ───────────────────────────────────────────────
-function OwnerCard({ owner, onMessage }: { owner: Owner; onMessage: () => void }) {
-  return (
-    <div className="rounded-xl border border-surface-container bg-surface-container-low p-4">
-      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-outline">Listed by</p>
-      <div className="flex items-center gap-3">
-        <img src={owner.avatar} alt={owner.name} className="h-12 w-12 rounded-full object-cover" />
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="font-bold text-on-surface">{owner.name}</p>
-            {owner.verified && (
-              <MaterialIcon name="verified" className="text-sm text-primary" fill />
-            )}
-          </div>
-          <p className="text-xs text-on-surface-variant">{owner.city} · {owner.totalProperties} properties</p>
-          <div className="mt-0.5 flex items-center gap-1">
-            <MaterialIcon name="star" className="text-[12px] text-amber-500" fill />
-            <span className="text-xs font-semibold text-on-surface">{owner.rating}</span>
-          </div>
-        </div>
-      </div>
-      <p className="mt-3 text-xs leading-relaxed text-on-surface-variant">{owner.bio}</p>
-      <div className="mt-3 space-y-1.5 text-xs text-on-surface-variant">
-        <p className="flex items-center gap-2"><MaterialIcon name="call" className="text-sm text-primary" />{owner.phone}</p>
-        <p className="flex items-center gap-2"><MaterialIcon name="mail" className="text-sm text-primary" />{owner.email}</p>
-      </div>
-      <button onClick={onMessage} className="btn-primary mt-4 w-full flex items-center justify-center gap-2 text-sm">
-        <MaterialIcon name="chat" className="text-sm" /> Message owner
-      </button>
-    </div>
-  );
-}
-
-// ─── Detail panel ─────────────────────────────────────────────────────────────
-function PropertyDetail({
-  property,
-  owner,
-  onMessage,
-  onClose,
-  onNavigate,
-}: {
-  property: PropertyListing;
-  owner: Owner | undefined;
-  onMessage: () => void;
-  onClose: () => void;
-  onNavigate: (page: string) => void;
-}) {
-  const [activeImg, setActiveImg] = useState(0);
-
-  return (
-    <div className="flex h-full flex-col overflow-y-auto bg-surface">
-      {/* Image gallery */}
-      <div className="relative h-56 shrink-0 overflow-hidden bg-surface-container-low sm:h-64">
-        <img
-          src={property.images[activeImg]}
-          alt={property.title}
-          className="h-full w-full object-cover"
-        />
-        {property.images.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
-            {property.images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveImg(i)}
-                className={`h-1.5 rounded-full transition-all ${i === activeImg ? "w-6 bg-white" : "w-1.5 bg-white/50"}`}
-              />
-            ))}
-          </div>
-        )}
-        {/* Back button */}
-        <button
-          onClick={onClose}
-          className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-black/60"
-        >
-          <MaterialIcon name="arrow_back" className="text-sm" /> Back
-        </button>
-        {/* Badges */}
-        <div className="absolute right-3 top-3 flex flex-col gap-1.5 items-end">
-          {property.verified && (
-            <span className="flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold text-white">
-              <MaterialIcon name="verified" className="text-[11px]" fill /> Verified
-            </span>
-          )}
-          <span className="rounded-full bg-black/40 px-2.5 py-1 text-[10px] font-bold capitalize text-white backdrop-blur-sm">
-            {property.propertyType}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex-1 px-5 py-4">
-        {/* Title & rent */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="font-headline text-xl font-extrabold leading-tight">{property.title}</h2>
-            <p className="mt-0.5 flex items-center gap-1 text-sm text-on-surface-variant">
-              <MaterialIcon name="location_on" className="text-sm text-primary" />
-              {property.location}
-            </p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="font-headline text-xl font-black text-primary">₹{property.rent.toLocaleString("en-IN")}</p>
-            <p className="text-xs text-outline">/month</p>
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div className="mt-4 grid grid-cols-4 divide-x divide-surface-container rounded-xl bg-surface-container-low py-3">
-          {[
-            { icon: "bed", label: `${property.bedrooms} Bed` },
-            { icon: "bathroom", label: `${property.bathrooms} Bath` },
-            { icon: "straighten", label: `${property.areaSqFt} ft²` },
-            { icon: "star", label: property.rating.toFixed(1) },
-          ].map(({ icon, label }) => (
-            <div key={label} className="flex flex-col items-center gap-1 px-3">
-              <MaterialIcon name={icon} className="text-primary" />
-              <span className="text-xs font-bold">{label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Available from */}
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-secondary/10 px-4 py-2 text-sm font-semibold text-secondary">
-          <MaterialIcon name="calendar_month" className="text-base" />
-          Available from {new Date(property.availableFrom).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
-        </div>
-
-        {/* Description */}
-        <div className="mt-5">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-outline">About this place</h3>
-          <p className="text-sm leading-relaxed text-on-surface-variant">{property.description}</p>
-        </div>
-
-        {/* Amenities */}
-        <div className="mt-5">
-          <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-outline">Amenities</h3>
-          <div className="flex flex-wrap gap-2">
-            {property.amenities.map((a) => (
-              <span key={a} className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                <MaterialIcon name="check_circle" className="text-[11px]" fill /> {a}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Room type */}
-        <div className="mt-5">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-outline">Room type</h3>
-          <span className="rounded-full bg-surface-container-high px-4 py-1.5 text-sm font-semibold capitalize text-on-surface">
-            {property.roomType === "private" ? "Private room" : property.roomType === "shared" ? "Shared room" : "Full apartment"}
-          </span>
-        </div>
-
-        {/* Owner */}
-        {owner && (
-          <div className="mt-5">
-            <ProfileGate action="contact the owner" onNavigate={onNavigate}>
-              <OwnerCard owner={owner} onMessage={onMessage} />
-            </ProfileGate>
-          </div>
-        )}
-      </div>
-
-      {/* Sticky CTA */}
-      <div className="sticky bottom-0 flex gap-3 border-t border-surface-container bg-surface px-5 py-4">
-        <ProfileGate action="send an inquiry" onNavigate={onNavigate}>
-          <button onClick={onMessage} className="btn-primary flex flex-1 items-center justify-center gap-2 text-sm">
-            <MaterialIcon name="send" className="text-sm" /> Send inquiry
-          </button>
-        </ProfileGate>
-        <button className="btn-tonal flex items-center gap-2 px-4 text-sm">
-          <MaterialIcon name="share" className="text-sm" />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Listing card ─────────────────────────────────────────────────────────────
 function ListingCard({ property, onClick }: { property: PropertyListing; onClick: () => void }) {
@@ -283,7 +105,6 @@ function ListingCard({ property, onClick }: { property: PropertyListing; onClick
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AccommodationSearch({ onNavigate }: PageProps) {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
-  const [selected, setSelected] = useState<PropertyListing | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const setF = <K extends keyof Filters>(key: K, val: Filters[K]) =>
@@ -298,49 +119,10 @@ export default function AccommodationSearch({ onNavigate }: PageProps) {
     return true;
   });
 
-  // ── Selected detail view ────────────────────────────────────────────────────
-  if (selected) {
-    const owner = OWNERS.find((o) => o.id === selected.ownerId);
-    const detailPanel = (
-      <PropertyDetail
-        property={selected}
-        owner={owner}
-        onMessage={() => onNavigate("messages")}
-        onClose={() => setSelected(null)}
-        onNavigate={onNavigate}
-      />
-    );
-
-    return (
-      <div className="flex h-screen flex-col overflow-hidden bg-surface">
-        {/* Desktop split */}
-        <div className="hidden h-full lg:flex">
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="shrink-0 border-b border-surface-container bg-white px-6 py-4">
-              <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-sm font-semibold text-on-surface-variant hover:text-primary">
-                <MaterialIcon name="arrow_back" className="text-sm" /> All Listings
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {filtered.map((p) => (
-                  <ListingCard key={p.id} property={p} onClick={() => setSelected(p)} />
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-[420px] shrink-0 overflow-hidden border-l border-surface-container">
-            {detailPanel}
-          </div>
-        </div>
-
-        {/* Mobile full-screen detail */}
-        <div className="flex flex-1 flex-col overflow-hidden lg:hidden">
-          {detailPanel}
-        </div>
-      </div>
-    );
-  }
+  const openProperty = (property: PropertyListing) => {
+    sessionStorage.setItem("homigo_selected_property", property.id);
+    onNavigate("property");
+  };
 
   // ── Grid view ───────────────────────────────────────────────────────────────
   return (
@@ -457,7 +239,7 @@ export default function AccommodationSearch({ onNavigate }: PageProps) {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((property) => (
-              <ListingCard key={property.id} property={property} onClick={() => setSelected(property)} />
+              <ListingCard key={property.id} property={property} onClick={() => openProperty(property)} />
             ))}
           </div>
         )}

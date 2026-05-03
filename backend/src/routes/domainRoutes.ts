@@ -9,6 +9,8 @@ import {
 } from "../controllers/ownerPropertyController.js";
 import {
   createOrGetConversation,
+  createOrGetConversationForProperty,
+  createOrGetConversationForUser,
   getMessagesByConversation,
   listConversations,
   postMessageToConversation,
@@ -353,6 +355,9 @@ export function createDomainRouter() {
     }
   });
 
+  // Start chat from User Details page
+  router.post("/users/:userId/conversations", createOrGetConversationForUser);
+
   router.post("/users/search", async (req, res) => {
     try {
       const filters = req.body.filters ?? {};
@@ -480,6 +485,9 @@ export function createDomainRouter() {
   router.post("/properties", upsertPropertyListing);
 
   router.get("/properties/:propertyId", getPropertyDetail);
+
+  // Start chat from Property Details page
+  router.post("/properties/:propertyId/conversations", createOrGetConversationForProperty);
 
   router.get("/properties/search", async (req, res) => {
     try {

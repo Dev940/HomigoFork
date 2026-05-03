@@ -2,7 +2,6 @@ import { useState } from "react";
 import TopNavBar from "../components/layout/TopNavBar";
 import BottomNavBar from "../components/layout/BottomNavBar";
 import MaterialIcon from "../components/ui/MaterialIcon";
-import ProfileGate from "../components/ui/ProfileGate";
 import { ROOMMATES, type RoommateProfile } from "../lib/mockData";
 
 type PageProps = { onNavigate: (page: string) => void };
@@ -27,130 +26,6 @@ const DEFAULT_FILTERS: Filters = {
 };
 
 const CITIES = ["all", "Bangalore", "Mumbai", "Hyderabad", "Delhi", "Pune", "Chennai", "Kolkata", "Ahmedabad", "Noida"];
-
-// ─── Detail panel ─────────────────────────────────────────────────────────────
-function RoommateDetail({ profile, onMessage, onClose }: { profile: RoommateProfile; onMessage: () => void; onClose: () => void }) {
-  const scheduleLabel = { early_bird: "Early Bird 🌅", night_owl: "Night Owl 🌙", flexible: "Flexible ☀️" }[profile.lifestyle.schedule];
-  const cleanlinessLabel = { high: "High ⭐⭐⭐", medium: "Balanced ⭐⭐", relaxed: "Relaxed ⭐" }[profile.lifestyle.cleanliness];
-
-  return (
-    <div className="flex h-full flex-col overflow-y-auto bg-surface">
-      {/* Header */}
-      <div className="relative h-48 shrink-0 bg-gradient-to-br from-primary/20 to-secondary/20">
-        <button
-          onClick={onClose}
-          className="absolute left-4 top-4 flex items-center gap-1 rounded-full bg-white/80 px-3 py-1.5 text-sm font-semibold text-on-surface shadow backdrop-blur-sm hover:bg-white"
-        >
-          <MaterialIcon name="arrow_back" className="text-sm" /> Back
-        </button>
-        <img
-          src={profile.avatar}
-          alt={profile.name}
-          className="absolute -bottom-10 left-6 h-24 w-24 rounded-2xl border-4 border-white object-cover shadow-lg"
-        />
-        <div className="absolute right-4 top-4 flex gap-2">
-          <span className={`rounded-full px-3 py-1 text-xs font-black ${profile.compatibility >= 90 ? "bg-secondary text-white" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
-            {profile.compatibility}% match
-          </span>
-          {profile.lifestyle.smoking === false && (
-            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">Non-smoker</span>
-          )}
-        </div>
-      </div>
-
-      {/* Identity */}
-      <div className="mt-12 px-6">
-        <h2 className="font-headline text-2xl font-extrabold">{profile.name}, {profile.age}</h2>
-        <p className="mt-0.5 text-sm font-semibold text-primary">{profile.occupation} · {profile.company}</p>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-on-surface-variant">
-          <MaterialIcon name="location_on" className="text-sm" /> {profile.city}
-        </p>
-      </div>
-
-      {/* Budget + gender */}
-      <div className="mt-4 flex gap-3 px-6">
-        <div className="flex-1 rounded-xl bg-primary/10 p-3 text-center">
-          <p className="text-xs text-on-surface-variant">Budget</p>
-          <p className="font-headline font-bold text-primary">₹{profile.budget.toLocaleString("en-IN")}/mo</p>
-        </div>
-        <div className="flex-1 rounded-xl bg-secondary/10 p-3 text-center">
-          <p className="text-xs text-on-surface-variant">Looking for</p>
-          <p className="font-headline font-bold capitalize text-secondary">
-            {profile.preferredGender === "any" ? "Anyone" : profile.preferredGender + " flatmate"}
-          </p>
-        </div>
-      </div>
-
-      {/* Bio */}
-      <div className="mt-5 px-6">
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-outline">About</h3>
-        <p className="text-sm leading-relaxed text-on-surface-variant">{profile.bio}</p>
-      </div>
-
-      {/* Lifestyle chips */}
-      <div className="mt-5 px-6">
-        <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-outline">Lifestyle</h3>
-        <div className="grid grid-cols-2 gap-2">
-          {(
-            [
-              ["schedule", scheduleLabel],
-              ["cleanliness", `Cleanliness: ${cleanlinessLabel}`],
-              profile.lifestyle.pets ? ["pets", "Pet Friendly 🐾"] : null,
-              profile.lifestyle.drinking ? ["drinking", "Social Drinker 🍺"] : ["drinking_no", "Non-drinker"],
-            ] as (string[] | null)[]
-          ).filter((item): item is string[] => item !== null).map(([key, label]) => (
-            <div key={key as string} className="flex items-center gap-2 rounded-lg bg-surface-container-low px-3 py-2 text-xs font-semibold text-on-surface">
-              {label as string}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Preferences */}
-      <div className="mt-5 px-6">
-        <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-outline">Preferences</h3>
-        <div className="flex flex-wrap gap-2">
-          {profile.preferences.map((pref) => (
-            <span key={pref} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{pref}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Preferred locations */}
-      <div className="mt-5 px-6">
-        <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-outline">Looking in</h3>
-        <div className="flex flex-wrap gap-2">
-          {profile.lookingIn.map((loc) => (
-            <span key={loc} className="flex items-center gap-1 rounded-full bg-surface-container-high px-3 py-1 text-xs font-semibold text-on-surface">
-              <MaterialIcon name="location_on" className="text-[10px] text-outline" />{loc}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Languages */}
-      <div className="mt-5 px-6">
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-outline">Languages</h3>
-        <p className="text-sm text-on-surface-variant">{profile.languages.join(", ")}</p>
-      </div>
-
-      {/* CTA */}
-      <div className="sticky bottom-0 mt-6 flex gap-3 border-t border-surface-container bg-surface px-6 py-4">
-        <ProfileGate action="send a message" onNavigate={() => {}}>
-          <button
-            onClick={onMessage}
-            className="btn-primary flex flex-1 items-center justify-center gap-2"
-          >
-            <MaterialIcon name="chat" className="text-sm" /> Message
-          </button>
-        </ProfileGate>
-        <button className="btn-tonal flex items-center gap-2 px-5">
-          <MaterialIcon name="bookmark_add" className="text-sm" />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Profile card ─────────────────────────────────────────────────────────────
 function ProfileCard({ profile, onClick }: { profile: RoommateProfile; onClick: () => void }) {
@@ -210,7 +85,6 @@ function ProfileCard({ profile, onClick }: { profile: RoommateProfile; onClick: 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function RoommateFinder({ onNavigate }: PageProps) {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
-  const [selected, setSelected] = useState<RoommateProfile | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const setF = <K extends keyof Filters>(key: K, val: Filters[K]) =>
@@ -226,48 +100,10 @@ export default function RoommateFinder({ onNavigate }: PageProps) {
     return true;
   });
 
-  // ── Selected profile detail view ────────────────────────────────────────────
-  if (selected) {
-    return (
-      <div className="flex h-screen flex-col overflow-hidden bg-surface">
-        {/* Desktop: split view */}
-        <div className="hidden h-full lg:flex">
-          {/* Left: grid */}
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="shrink-0 border-b border-surface-container bg-white px-6 py-4">
-              <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-sm font-semibold text-on-surface-variant hover:text-primary">
-                <MaterialIcon name="arrow_back" className="text-sm" /> All Roommates
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {filtered.map((p) => (
-                  <ProfileCard key={p.id} profile={p} onClick={() => setSelected(p)} />
-                ))}
-              </div>
-            </div>
-          </div>
-          {/* Right: detail */}
-          <div className="w-96 shrink-0 overflow-hidden border-l border-surface-container">
-            <RoommateDetail
-              profile={selected}
-              onMessage={() => onNavigate("messages")}
-              onClose={() => setSelected(null)}
-            />
-          </div>
-        </div>
-
-        {/* Mobile: full-screen detail */}
-        <div className="flex flex-1 flex-col overflow-hidden lg:hidden">
-          <RoommateDetail
-            profile={selected}
-            onMessage={() => onNavigate("messages")}
-            onClose={() => setSelected(null)}
-          />
-        </div>
-      </div>
-    );
-  }
+  const openRoommate = (profile: RoommateProfile) => {
+    sessionStorage.setItem("homigo_selected_roommate", profile.id);
+    onNavigate("roommate");
+  };
 
   // ── Grid view ───────────────────────────────────────────────────────────────
   return (
@@ -396,7 +232,7 @@ export default function RoommateFinder({ onNavigate }: PageProps) {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((profile) => (
-              <ProfileCard key={profile.id} profile={profile} onClick={() => setSelected(profile)} />
+              <ProfileCard key={profile.id} profile={profile} onClick={() => openRoommate(profile)} />
             ))}
           </div>
         )}

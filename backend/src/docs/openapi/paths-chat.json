@@ -50,6 +50,77 @@
         }
       }
     },
+    "/api/properties/{propertyId}/conversations": {
+      "post": {
+        "tags": ["Properties", "Domain"],
+        "summary": "Start chat from Property Details page (viewer ↔ property owner)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "propertyId",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["user_id"],
+                "properties": {
+                  "user_id": { "oneOf": [{ "type": "integer" }, { "type": "string" }] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Existing conversation returned" },
+          "201": { "description": "Conversation created" },
+          "400": { "description": "Bad request" },
+          "404": { "description": "Property or user not found" }
+        }
+      }
+    },
+    "/api/users/{userId}/conversations": {
+      "post": {
+        "tags": ["Users", "Domain"],
+        "summary": "Start chat from User Details page (viewer ↔ target user)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Target user identifier (numeric user_id, email, or clerk_id)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["user_id"],
+                "properties": {
+                  "user_id": { "oneOf": [{ "type": "integer" }, { "type": "string" }] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Existing conversation returned" },
+          "201": { "description": "Conversation created" },
+          "400": { "description": "Bad request" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
     "/api/messages/{conversationId}": {
       "get": {
         "tags": ["Domain"],

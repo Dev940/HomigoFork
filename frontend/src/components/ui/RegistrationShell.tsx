@@ -3,6 +3,7 @@ import MaterialIcon from "./MaterialIcon";
 type RegistrationShellProps = {
   children: React.ReactNode;
   currentStep: number;
+  totalSteps?: number;
   title?: string;
   subtitle?: string;
   onBack: () => void;
@@ -24,6 +25,7 @@ const steps = [
 export default function RegistrationShell({
   children,
   currentStep,
+  totalSteps = 4,
   title,
   subtitle,
   onBack,
@@ -90,20 +92,20 @@ export default function RegistrationShell({
           }
         >
           {title && (
-            <div className={sideTimeline ? "mb-12" : "mb-10 w-full max-w-lg"}>
+            <div className={sideTimeline ? "mb-12" : "mb-10 w-full"}>
               <div className="mb-4 flex items-end justify-between">
                 <div>
                   <h1 className="font-headline text-3xl font-extrabold tracking-tight text-on-surface">{title}</h1>
                   {subtitle && <p className="mt-1 text-on-surface-variant">{subtitle}</p>}
                 </div>
                 <span
-                  className={`text-sm font-semibold ${sideTimeline ? "rounded-full bg-secondary-fixed px-4 py-1.5 text-secondary lg:hidden" : "text-primary"}`}
+                  className={`shrink-0 text-sm font-semibold ${sideTimeline ? "rounded-full bg-secondary-fixed px-4 py-1.5 text-secondary lg:hidden" : "text-primary"}`}
                 >
-                  Step {currentStep} of 4
+                  Step {currentStep} of {totalSteps}
                 </span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container-highest">
-                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${currentStep * 25}%` }} />
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(currentStep / totalSteps) * 100}%` }} />
               </div>
             </div>
           )}

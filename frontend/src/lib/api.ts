@@ -28,6 +28,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  /** Sync the signed-in Clerk user into the Supabase users table.
+   *  Returns the Supabase user row including the numeric user_id. */
+  syncUser() {
+    return request<ApiSingleResponse<{ user_id: number; clerk_id: string; email: string; full_name: string | null; role: string | null }>>(
+      "/auth/sync",
+      { method: "POST" },
+    );
+  },
+
   saveUserProfile(payload: unknown) {
     return request<ApiSingleResponse<unknown>>("/users/profile", {
       method: "POST",

@@ -1,18 +1,95 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import MaterialIcon from "../../components/ui/MaterialIcon";
 import RegistrationShell from "../../components/ui/RegistrationShell";
 import { api } from "../../lib/api";
 import { useHomigoAuth } from "../../components/auth/AuthContext";
+import { readOwnerDraft } from "../../lib/registrationDraft";
 
 type PageProps = { onNavigate: (page: string) => void };
 
-const selfiePreview = "https://lh3.googleusercontent.com/aida-public/AB6AXuClzXEZ5zHMvYVGcZF29M-y3hKd-O_aBRoNGwL8p8gKssHButuVymuY6WwIdO7671NkWKd33uyaH5J2gjvj-GCvtjtx6gLLy2ZodIqgnewjbPe9Fj1TBQqAsJ4ak3YahU1Ql1UtiQXKwuGI08HKZFx5NHmm85WUmijvumnVKTlsAXgC66uHhf1j5EjHZ7O81b0cNRoDOXWrj7wbAkf6xWUKiw6zuDsC-qliAgc2u4kK7N0mf2qAVwxMGVmko3iz1yWcToryjKwoOS3Q";
+type UploadZoneProps = {
+  file: File | null;
+  onFile: (f: File) => void;
+  icon: string;
+  hint: string;
+};
+
+function UploadZone({ file, onFile, icon, hint }: UploadZoneProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const handleFiles = (files: FileList | null) => {
+    const f = files?.[0];
+    if (f) onFile(f);
+  };
+
+  const isImage = file && file.type.startsWith("image/");
+  const previewUrl = isImage ? URL.createObjectURL(file!) : null;
+
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+      onClick={() => inputRef.current?.click()}
+      className={`relative cursor-pointer overflow-hidden rounded-xl border-2 border-dashed transition ${
+        dragging ? "border-primary bg-primary/5" : file ? "border-primary/40 bg-surface-container-low" : "border-outline-variant bg-surface-container-low hover:border-primary hover:bg-primary/5"
+      }`}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+
+      {previewUrl ? (
+        <div className="relative">
+          <img src={previewUrl} alt="Preview" className="h-40 w-full object-cover" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition hover:opacity-100">
+            <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-on-surface">Change file</span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-surface-container">
+            <MaterialIcon name={icon} className="text-outline" />
+          </div>
+          <p className="text-sm font-semibold text-on-surface">Click to upload or drag &amp; drop</p>
+          <p className="text-xs text-on-surface-variant">{hint}</p>
+        </div>
+      )}
+
+      {file && !previewUrl && (
+        <div className="flex items-center gap-3 px-4 py-3">
+          <MaterialIcon name="description" className="text-primary" />
+          <span className="flex-1 truncate text-sm font-medium text-on-surface">{file.name}</span>
+          <MaterialIcon name="check_circle" className="text-teal-600" fill />
+        </div>
+      )}
+
+      {file && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onFile(null as any); }}
+          className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white"
+          aria-label="Remove file"
+        >
+          <MaterialIcon name="close" className="text-sm" />
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function Step4KYC({ onNavigate }: PageProps) {
   const { userId, userProfile } = useHomigoAuth();
   const [governmentIdType, setGovernmentIdType] = useState("aadhar");
-  const [governmentIdNumber, setGovernmentIdNumber] = useState("XXXX-XXXX-1234");
+  const [governmentIdNumber, setGovernmentIdNumber] = useState("");
+  const [governmentIdFile, setGovernmentIdFile] = useState<File | null>(null);
   const [addressProofType, setAddressProofType] = useState("utility_bill");
+  const [addressProofFile, setAddressProofFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "error" | "success"; message: string } | null>(null);
 
@@ -20,70 +97,98 @@ export default function Step4KYC({ onNavigate }: PageProps) {
     if (loading) return;
     setLoading(true);
     setStatus(null);
+
+    const draft = readOwnerDraft();
+    const property = draft.property;
+
+    const amenityKeys = property.amenities.map((label) =>
+      label.toLowerCase().replace(/-/g, "_").replace(/\s+/g, "_"),
+    );
+
+    const roomTypeMap: Record<string, string> = {
+      private_room: "private",
+      shared_room: "shared",
+      full_apartment: "pg",
+    };
+    const roomType = roomTypeMap[property.room_type] ?? property.room_type;
+    const hasRoom = Boolean(property.city || property.title);
+
     try {
-      await api.saveOwnerProfile({
-        owner_id: userId,
+      await api.saveUserProfile({
+        user_id: userId,
         basic_info: {
-          full_name: userProfile?.fullName ?? "Homigo Owner",
-          email: userProfile?.email ?? "owner@homigo.com",
-          phone: userProfile?.phone ?? "",
-          profile_photo: userProfile?.imageUrl,
+          full_name: draft.basic_info.full_name || userProfile?.fullName || null,
+          email: draft.basic_info.email || userProfile?.email,
+          phone: draft.basic_info.phone || userProfile?.phone || null,
+          role: "owner",
+          profile_photo: draft.basic_info.profile_photo || userProfile?.imageUrl || null,
         },
-        owner_profile: {
-          business_name: "Homigo Rentals",
-          owner_type: "individual",
-          bio: "Providing quality rental spaces with trusted service.",
-        },
-        verification_details: {
-          kyc_status: "pending",
-          government_id: {
-            id_type: governmentIdType,
-            id_number: governmentIdNumber,
-            document_images: [
-              "https://cdn.homigo.com/kyc/id_front.jpg",
-              "https://cdn.homigo.com/kyc/id_back.jpg",
-            ],
-          },
-          address_proof: {
-            document_type: addressProofType,
-            document_image: "https://cdn.homigo.com/kyc/address.jpg",
-          },
-        },
+        owner_profile: { kyc_status: "pending" },
+        current_room_details: hasRoom
+          ? {
+              has_room: true,
+              room_type: roomType,
+              location: property.city || null,
+              rent: property.monthly_rent ? Number(property.monthly_rent) : null,
+              vacancy: 1,
+              description: property.title || null,
+              room_images: [],
+              amenities: amenityKeys,
+              room_preferences: { preferred_gender: "any" },
+            }
+          : { has_room: false },
       });
       setStatus({ type: "success", message: "Verification submitted successfully!" });
       onNavigate("owner5");
     } catch (error) {
-      console.error("[Step4KYC] submitKyc failed:", error);
-      setStatus({ type: "error", message: error instanceof Error ? error.message : "Could not submit verification. Please try again." });
+      setStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Could not submit verification. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <RegistrationShell currentStep={4} title="Identity Verification" subtitle="Verify your identity to ensure a safe and trusted community for all Homigo users." onBack={() => onNavigate("owner3")} onContinue={submitKyc} continueLabel="Save & Continue" loading={loading}>
-      <section className="mb-12 flex flex-col justify-between gap-6 text-center md:flex-row md:items-end md:text-left">
-        <div>
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-primary">
-            <MaterialIcon name="verified_user" className="text-sm" fill />
-            <span className="text-xs font-bold uppercase tracking-widest">Bank-Grade Security</span>
-          </div>
+    <RegistrationShell
+      currentStep={4}
+      totalSteps={5}
+      title="Identity Verification"
+      subtitle="Verify your identity to ensure a safe and trusted community for all Homigo users."
+      onBack={() => onNavigate("owner3")}
+      onContinue={submitKyc}
+      continueLabel="Save & Continue"
+      loading={loading}
+    >
+      {/* Status badge row — aligned with the title block */}
+      <div className="mb-8 flex flex-wrap items-center gap-3">
+        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-primary">
+          <MaterialIcon name="verified_user" className="text-sm" fill />
+          <span className="text-xs font-bold uppercase tracking-widest">Bank-Grade Security</span>
         </div>
-        <div className="hidden rounded-xl bg-secondary-fixed px-4 py-2 text-on-secondary-fixed md:flex md:items-center md:gap-2">
-          <MaterialIcon name="pending" />
-          <span className="text-sm font-semibold">Status: Pending</span>
+        <div className="flex items-center gap-2 rounded-full bg-secondary-fixed px-3 py-1 text-on-secondary-fixed">
+          <MaterialIcon name="pending" className="text-sm" />
+          <span className="text-xs font-semibold">Status: Pending</span>
         </div>
-      </section>
+      </div>
+
       {status && (
         <p className={`mb-6 rounded-lg p-4 text-sm font-semibold ${status.type === "error" ? "bg-error/10 text-error" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
           {status.message}
         </p>
       )}
+
       <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
+        {/* Left column — documents */}
         <div className="space-y-8 md:col-span-7">
+
+          {/* Government ID */}
           <div className="rounded-xl bg-surface-container-lowest p-8">
             <div className="mb-6 flex items-start gap-4">
-              <div className="rounded-xl bg-primary-container/20 p-3 text-primary"><MaterialIcon name="badge" /></div>
+              <div className="rounded-xl bg-primary-container/20 p-3 text-primary">
+                <MaterialIcon name="badge" />
+              </div>
               <div>
                 <h3 className="font-headline text-xl font-bold">Government ID</h3>
                 <p className="text-sm text-on-surface-variant">Aadhar Card, Passport, or Driver's License</p>
@@ -91,55 +196,83 @@ export default function Step4KYC({ onNavigate }: PageProps) {
             </div>
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <select value={governmentIdType} onChange={(event) => setGovernmentIdType(event.target.value)}><option value="aadhar">Aadhar</option><option value="passport">Passport</option><option value="pan">PAN</option><option value="dl">Driver's License</option></select>
-                <input value={governmentIdNumber} onChange={(event) => setGovernmentIdNumber(event.target.value)} placeholder="XXXX-XXXX-1234" />
+                <select value={governmentIdType} onChange={(e) => setGovernmentIdType(e.target.value)}>
+                  <option value="aadhar">Aadhar Card</option>
+                  <option value="passport">Passport</option>
+                  <option value="pan">PAN Card</option>
+                  <option value="dl">Driver's License</option>
+                </select>
+                <input
+                  value={governmentIdNumber}
+                  onChange={(e) => setGovernmentIdNumber(e.target.value)}
+                  placeholder={governmentIdType === "aadhar" ? "XXXX-XXXX-XXXX" : "ID number"}
+                />
               </div>
-              <div className="cursor-pointer rounded-xl border-2 border-dashed border-outline-variant p-10 text-center transition-colors hover:bg-surface-container-low">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-surface-container"><MaterialIcon name="upload_file" className="text-outline" /></div>
-                <p className="mb-1 font-semibold text-on-surface">Click to upload or drag and drop</p>
-                <p className="text-xs text-on-surface-variant">PNG, JPG or PDF (max. 10MB)</p>
-              </div>
+              <UploadZone
+                file={governmentIdFile}
+                onFile={setGovernmentIdFile}
+                icon="upload_file"
+                hint="PNG, JPG or PDF · max 10 MB"
+              />
             </div>
           </div>
+
+          {/* Address Proof */}
           <div className="rounded-xl bg-surface-container-lowest p-8">
             <div className="mb-6 flex items-start gap-4">
-              <div className="rounded-xl bg-primary-container/20 p-3 text-primary"><MaterialIcon name="home_pin" /></div>
+              <div className="rounded-xl bg-primary-container/20 p-3 text-primary">
+                <MaterialIcon name="home_pin" />
+              </div>
               <div>
                 <h3 className="font-headline text-xl font-bold">Address Proof</h3>
                 <p className="text-sm text-on-surface-variant">Utility bill, Rent agreement, or Bank statement</p>
               </div>
             </div>
             <div className="space-y-4">
-              <select value={addressProofType} onChange={(event) => setAddressProofType(event.target.value)}><option value="utility_bill">Utility bill</option><option value="bank_statement">Bank statement</option><option value="rent_agreement">Rent agreement</option></select>
-              <div className="cursor-pointer rounded-xl border-2 border-dashed border-outline-variant p-10 text-center transition-colors hover:bg-surface-container-low">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-surface-container"><MaterialIcon name="description" className="text-outline" /></div>
-                <p className="mb-1 font-semibold text-on-surface">Click to upload document</p>
-                <p className="text-xs text-on-surface-variant">Recent document issued within last 3 months</p>
-              </div>
+              <select value={addressProofType} onChange={(e) => setAddressProofType(e.target.value)}>
+                <option value="utility_bill">Utility Bill</option>
+                <option value="bank_statement">Bank Statement</option>
+                <option value="rent_agreement">Rent Agreement</option>
+              </select>
+              <UploadZone
+                file={addressProofFile}
+                onFile={setAddressProofFile}
+                icon="description"
+                hint="Recent document issued within last 3 months"
+              />
             </div>
           </div>
         </div>
+
+        {/* Right column — info */}
         <div className="space-y-8 md:col-span-5">
-          <div className="overflow-hidden rounded-xl bg-surface-container-lowest">
-            <div className="border-b border-surface-container p-6"><div className="flex items-center gap-3"><MaterialIcon name="face" className="text-secondary" /><h3 className="font-headline text-lg font-bold">Liveness Check</h3></div></div>
-            <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-slate-900 p-6">
-              <img alt="Verification Background" className="absolute inset-0 h-full w-full object-cover opacity-50 blur-[2px]" src={selfiePreview} />
-              <div className="relative z-10 flex h-64 w-64 items-center justify-center rounded-[4rem] border-2 border-primary-fixed">
-                <div className="absolute -left-1 -top-1 h-6 w-6 rounded-tl-xl border-l-4 border-t-4 border-primary" />
-                <div className="absolute -right-1 -top-1 h-6 w-6 rounded-tr-xl border-r-4 border-t-4 border-primary" />
-                <div className="absolute -bottom-1 -left-1 h-6 w-6 rounded-bl-xl border-b-4 border-l-4 border-primary" />
-                <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-br-xl border-b-4 border-r-4 border-primary" />
-                <button className="group rounded-full border border-white/20 bg-white/10 p-6 text-white backdrop-blur-md transition-all hover:bg-white/20" type="button"><MaterialIcon name="photo_camera" className="text-3xl transition-transform group-active:scale-90" /></button>
-              </div>
-              <div className="absolute bottom-4 left-0 w-full px-6 text-center"><p className="rounded-lg bg-slate-900/60 py-2 text-xs font-medium tracking-wide text-white backdrop-blur-sm">Position your face inside the frame and blink</p></div>
-            </div>
-          </div>
           <div className="rounded-xl bg-surface-container-low p-6">
-            <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-on-surface"><MaterialIcon name="info" className="text-lg text-primary" fill />Why verify?</h4>
+            <h4 className="mb-4 flex items-center gap-2 font-headline text-lg font-bold">
+              <MaterialIcon name="shield" className="text-primary" fill />
+              Why verify?
+            </h4>
             <ul className="space-y-3">
-              {["Premium badge on your profile", "Higher priority in roommate search", "Secure encrypted data handling"].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-on-surface-variant"><MaterialIcon name="check_circle" className="mt-0.5 text-sm text-teal-600" />{item}</li>
+              {[
+                ["verified", "Premium verified badge on your profile"],
+                ["trending_up", "Higher priority in roommate search results"],
+                ["lock", "Secure encrypted data — never shared"],
+                ["handshake", "Builds trust with potential tenants"],
+              ].map(([icon, text]) => (
+                <li key={text} className="flex items-start gap-3 text-sm text-on-surface-variant">
+                  <MaterialIcon name={icon} className="mt-0.5 text-sm text-teal-600" />
+                  {text}
+                </li>
               ))}
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6">
+            <h4 className="mb-3 font-headline text-sm font-bold uppercase tracking-widest text-on-surface-variant">Tips</h4>
+            <ul className="space-y-2 text-sm text-on-surface-variant">
+              <li>· Make sure the document is clear and fully visible</li>
+              <li>· All four corners must be in the frame</li>
+              <li>· Avoid glare or shadows on the document</li>
+              <li>· File size must be under 10 MB</li>
             </ul>
           </div>
         </div>

@@ -5,6 +5,8 @@ import RoleSelection from "./pages/RoleSelection";
 import Dashboard from "./pages/Dashboard";
 import RoommateFinder from "./pages/RoommateFinder";
 import AccommodationSearch from "./pages/AccommodationSearch";
+import PropertyDetailPage from "./pages/PropertyDetailPage";
+import RoommateDetailPage from "./pages/RoommateDetailPage";
 import Messages from "./pages/Messages";
 import UserProfile from "./pages/UserProfile";
 import Step1Registration from "./pages/onboarding/Step1Registration";
@@ -26,7 +28,9 @@ const validPages = new Set([
   "role",
   "dashboard",
   "roommates",
+  "roommate",
   "accommodation",
+  "property",
   "messages",
   "profile",
   "onboarding1",
@@ -49,7 +53,9 @@ const publicPages = new Set(["landing", "login", "role"]);
 export default function App({ clerkEnabled = false }: AppProps) {
   const initialPage = useMemo(() => {
     const hash = window.location.hash.replace("#/", "");
-    return validPages.has(hash) ? hash : "landing";
+    if (validPages.has(hash)) return hash;
+    window.location.hash = "/landing";
+    return "landing";
   }, []);
   const [page, setPage] = useState(initialPage);
   const [authUserId, setAuthUserId] = useState<string | number>(Number(import.meta.env.VITE_DEMO_USER_ID ?? 1));
@@ -91,8 +97,12 @@ export default function App({ clerkEnabled = false }: AppProps) {
       return <Dashboard onNavigate={navigate} />;
     case "roommates":
       return <RoommateFinder onNavigate={navigate} />;
+    case "roommate":
+      return <RoommateDetailPage onNavigate={navigate} />;
     case "accommodation":
       return <AccommodationSearch onNavigate={navigate} />;
+    case "property":
+      return <PropertyDetailPage onNavigate={navigate} />;
     case "messages":
       return <Messages onNavigate={navigate} />;
     case "profile":
@@ -124,7 +134,7 @@ export default function App({ clerkEnabled = false }: AppProps) {
 
   return (
     <AuthProvider value={{ userId: authUserId, isClerkEnabled: clerkEnabled, userProfile: authUserProfile }}>
-      {clerkEnabled && <AuthBridge onNavigate={navigate} onUserIdChange={handleUserIdChange} onUserProfileChange={handleUserProfileChange} />}
+      {clerkEnabled && <AuthBridge onNavigate={navigate} onUserIdChange={handleUserIdChange} onUserProfileChange={handleUserProfileChange} currentPage={page} />}
       {publicPages.has(page) ? pageElement : <ProtectedRoute clerkEnabled={clerkEnabled} onNavigate={navigate}>{pageElement}</ProtectedRoute>}
     </AuthProvider>
   );

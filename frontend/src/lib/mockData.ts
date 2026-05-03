@@ -558,6 +558,7 @@ export type RoommateProfile = {
   languages: string[];
   avatar: string;
   lookingIn: string[];
+  propertyId?: string;
 };
 
 export const ROOMMATES: RoommateProfile[] = [
@@ -578,6 +579,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Hindi", "English", "Punjabi"],
     avatar: "https://i.pravatar.cc/150?img=5",
     lookingIn: ["Koramangala", "Indiranagar", "HSR Layout"],
+    propertyId: "p3",
   },
   {
     id: "r2",
@@ -596,6 +598,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Hindi", "English", "Gujarati"],
     avatar: "https://i.pravatar.cc/150?img=53",
     lookingIn: ["Andheri West", "Bandra", "Versova"],
+    propertyId: "p2",
   },
   {
     id: "r3",
@@ -614,6 +617,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Telugu", "Hindi", "English"],
     avatar: "https://i.pravatar.cc/150?img=10",
     lookingIn: ["Banjara Hills", "HITEC City", "Jubilee Hills"],
+    propertyId: "p18",
   },
   {
     id: "r4",
@@ -650,6 +654,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Malayalam", "Tamil", "English", "Hindi"],
     avatar: "https://i.pravatar.cc/150?img=29",
     lookingIn: ["Indiranagar", "Domlur", "CV Raman Nagar"],
+    propertyId: "p10",
   },
   {
     id: "r6",
@@ -722,6 +727,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Tamil", "Kannada", "English"],
     avatar: "https://i.pravatar.cc/150?img=33",
     lookingIn: ["Koramangala", "HSR Layout", "Indiranagar"],
+    propertyId: "p3",
   },
   {
     id: "r10",
@@ -740,6 +746,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Hindi", "English", "Punjabi"],
     avatar: "https://i.pravatar.cc/150?img=51",
     lookingIn: ["Greater Kailash", "Lajpat Nagar", "South Extension"],
+    propertyId: "p13",
   },
   {
     id: "r11",
@@ -776,6 +783,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Kannada", "Telugu", "English", "Hindi"],
     avatar: "https://i.pravatar.cc/150?img=63",
     lookingIn: ["HITEC City", "Madhapur", "Gachibowli"],
+    propertyId: "p18",
   },
   {
     id: "r13",
@@ -794,6 +802,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Malayalam", "Tamil", "English"],
     avatar: "https://i.pravatar.cc/150?img=41",
     lookingIn: ["Adyar", "Besant Nagar", "Thiruvanmiyur"],
+    propertyId: "p15",
   },
   {
     id: "r14",
@@ -866,6 +875,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Bengali", "Hindi", "English"],
     avatar: "https://i.pravatar.cc/150?img=44",
     lookingIn: ["Salt Lake", "Park Street", "Alipore"],
+    propertyId: "p17",
   },
   {
     id: "r18",
@@ -884,6 +894,7 @@ export const ROOMMATES: RoommateProfile[] = [
     languages: ["Bengali", "Hindi", "English", "Kannada"],
     avatar: "https://i.pravatar.cc/150?img=62",
     lookingIn: ["Whitefield", "Marathahalli", "Bellandur"],
+    propertyId: "p1",
   },
 ];
 
