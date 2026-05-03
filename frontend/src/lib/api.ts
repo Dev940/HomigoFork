@@ -1,4 +1,4 @@
-import type { ApiListResponse, ApiSingleResponse, Conversation, DashboardData, Message, Property, RoommateMatch } from "./types";
+import type { ApiListResponse, ApiSingleResponse, Conversation, DashboardData, Message, Property, RoommateMatch, SeekerSearchResult } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000/api";
 let authTokenGetter: (() => Promise<string | null>) | null = null;
@@ -45,9 +45,20 @@ export const api = {
   },
 
   searchUsers(payload: unknown) {
-    return request<ApiListResponse<unknown>>("/users/search", {
+    return request<ApiListResponse<SeekerSearchResult>>("/users/search", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+
+  getRecommendedRoommates(limit = 3) {
+    return request<ApiListResponse<SeekerSearchResult>>("/users/search", {
+      method: "POST",
+      body: JSON.stringify({
+        filters: {},
+        pagination: { page: 1, limit },
+        sort: { by: "compatibility", order: "desc" },
+      }),
     });
   },
 

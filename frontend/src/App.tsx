@@ -21,6 +21,7 @@ import Step5Complete from "./pages/owner/Step5Complete";
 import AuthBridge from "./components/auth/AuthBridge";
 import { AuthProvider } from "./components/auth/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import TopNavBar from "./components/layout/TopNavBar";
 
 const validPages = new Set([
   "landing",
@@ -49,6 +50,7 @@ type AppProps = {
 };
 
 const publicPages = new Set(["landing", "login", "role"]);
+const topNavPages = new Set(["landing", "dashboard", "roommates", "roommate", "accommodation", "property", "messages", "profile"]);
 
 export default function App({ clerkEnabled = false }: AppProps) {
   const initialPage = useMemo(() => {
@@ -134,6 +136,7 @@ export default function App({ clerkEnabled = false }: AppProps) {
 
   return (
     <AuthProvider value={{ userId: authUserId, isClerkEnabled: clerkEnabled, userProfile: authUserProfile }}>
+      {topNavPages.has(page) && <TopNavBar onNavigate={navigate} />}
       {clerkEnabled && <AuthBridge onNavigate={navigate} onUserIdChange={handleUserIdChange} onUserProfileChange={handleUserProfileChange} currentPage={page} />}
       {publicPages.has(page) ? pageElement : <ProtectedRoute clerkEnabled={clerkEnabled} onNavigate={navigate}>{pageElement}</ProtectedRoute>}
     </AuthProvider>

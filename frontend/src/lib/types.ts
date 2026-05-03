@@ -65,10 +65,37 @@ export type Message = {
   sent_at?: string | null;
 };
 
+export type DashboardStats = {
+  total_matches?: number;
+  active_chats?: number;
+  saved_properties?: number;
+  profile_completion?: number;
+};
+
 export type DashboardData = {
   user: User;
   matches: RoommateMatch[];
   saved: unknown[];
   conversations: Conversation[];
   notifications: unknown[];
+  stats?: DashboardStats;
+  recommended_properties?: Property[];
+};
+
+export type SeekerSearchResult = {
+  user_id: string | number;
+  name?: string | null;
+  age?: number | null;
+  gender?: string | null;
+  occupation?: string | null;
+  location?: string | null;
+  budget?: number | null;
+  profile_image?: string | null;
+  lifestyle?: {
+    smoking?: unknown;
+    drinking?: unknown;
+    sleep?: unknown;
+    cleanliness?: unknown;
+  };
+  compatibility: number;
 };

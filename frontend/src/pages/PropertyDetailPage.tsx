@@ -1,5 +1,4 @@
 import { useState } from "react";
-import TopNavBar from "../components/layout/TopNavBar";
 import MaterialIcon from "../components/ui/MaterialIcon";
 import ProfileGate from "../components/ui/ProfileGate";
 import { PROPERTIES, OWNERS } from "../lib/mockData";
@@ -17,7 +16,6 @@ export default function PropertyDetailPage({ onNavigate }: PageProps) {
   if (!property) {
     return (
       <div className="flex min-h-screen flex-col bg-surface">
-        <TopNavBar onNavigate={onNavigate} />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pt-20 text-center">
           <MaterialIcon name="apartment" className="text-6xl text-outline" />
           <p className="font-headline text-xl font-bold text-on-surface">Property not found</p>
@@ -36,8 +34,6 @@ export default function PropertyDetailPage({ onNavigate }: PageProps) {
 
   return (
     <div className="min-h-screen bg-surface pb-32">
-      <TopNavBar onNavigate={onNavigate} />
-
       <main className="mx-auto max-w-6xl px-4 pt-24 sm:px-6">
 
         {/* Back breadcrumb */}
@@ -260,6 +256,7 @@ export default function PropertyDetailPage({ onNavigate }: PageProps) {
           </div>
         </div>
       </main>
+
 
       {/* Sticky bottom CTA */}
       <div className="fixed bottom-0 left-0 z-40 w-full border-t border-surface-container bg-white/90 px-4 py-4 backdrop-blur-md">

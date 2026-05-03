@@ -276,7 +276,7 @@ export default function Messages({ onNavigate }: PageProps) {
 
   // ─── Layout ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen overflow-hidden bg-surface">
+    <div className="flex h-screen overflow-hidden bg-surface pt-16">
       {/* Mobile: toggle between list and chat */}
       <div className={`w-full shrink-0 flex-col lg:w-80 lg:flex ${mobileChatOpen ? "hidden lg:flex" : "flex"}`}>
         {ContactList}

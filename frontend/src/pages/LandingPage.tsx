@@ -1,5 +1,4 @@
 import Footer from "../components/layout/Footer";
-import TopNavBar from "../components/layout/TopNavBar";
 import MaterialIcon from "../components/ui/MaterialIcon";
 
 const heroImages = [
@@ -13,7 +12,6 @@ type PageProps = { onNavigate: (page: string) => void };
 export default function LandingPage({ onNavigate }: PageProps) {
   return (
     <>
-      <TopNavBar onNavigate={onNavigate} />
       <main className="pt-20">
         <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-16 md:grid-cols-2 md:py-24">
           <div>

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import TopNavBar from "../components/layout/TopNavBar";
 import MaterialIcon from "../components/ui/MaterialIcon";
 import ProfileGate from "../components/ui/ProfileGate";
 import { ROOMMATES, PROPERTIES } from "../lib/mockData";
@@ -34,7 +33,6 @@ export default function RoommateDetailPage({ onNavigate }: PageProps) {
   if (!profile) {
     return (
       <div className="flex min-h-screen flex-col bg-surface">
-        <TopNavBar onNavigate={onNavigate} />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pt-20 text-center">
           <MaterialIcon name="person_search" className="text-6xl text-outline" />
           <p className="font-headline text-xl font-bold text-on-surface">Profile not found</p>
@@ -54,8 +52,6 @@ export default function RoommateDetailPage({ onNavigate }: PageProps) {
 
   return (
     <div className="min-h-screen bg-surface pb-32">
-      <TopNavBar onNavigate={onNavigate} />
-
       <main className="mx-auto max-w-5xl px-4 pt-24 sm:px-6">
 
         {/* Back breadcrumb */}

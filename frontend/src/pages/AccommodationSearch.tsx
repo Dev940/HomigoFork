@@ -1,5 +1,4 @@
 import { useState } from "react";
-import TopNavBar from "../components/layout/TopNavBar";
 import BottomNavBar from "../components/layout/BottomNavBar";
 import MaterialIcon from "../components/ui/MaterialIcon";
 import { PROPERTIES, OWNERS, type PropertyListing } from "../lib/mockData";
@@ -127,8 +126,6 @@ export default function AccommodationSearch({ onNavigate }: PageProps) {
   // ── Grid view ───────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen flex-col bg-surface">
-      <TopNavBar onNavigate={onNavigate} />
-
       <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-24 sm:px-6">
         {/* Page header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
